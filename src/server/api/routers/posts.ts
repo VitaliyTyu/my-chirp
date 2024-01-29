@@ -19,10 +19,9 @@ const mapUserForClient = (user: User) => {
   };
 };
 
-// reate limiter 3 req per 1 min
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(3, "1 m"),
+  limiter: Ratelimit.slidingWindow(3, "10 s"),
   analytics: true,
 });
 
@@ -59,7 +58,7 @@ export const postsRouter = createTRPCRouter({
   create: privateProcedure
     .input(
       z.object({
-        content: z.string().emoji().min(1).max(280),
+        content: z.string().emoji("Only emojis are allowed").min(1).max(280),
       }),
     )
     .mutation(async ({ ctx, input }) => {

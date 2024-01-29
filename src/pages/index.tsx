@@ -8,6 +8,7 @@ import type { RouterOutputs } from "~/utils/api";
 import Image from "next/image";
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 dayjs.extend(relativeTime);
 
@@ -24,16 +25,23 @@ const CreatePostWitzard = () => {
       setInput("");
       // void для того чтобы, показать ts, что на мне важно выполнение промиса сейчас, он выполнится где-то там
       void ctx.posts.getAll.invalidate();
+      toast.success("post created!");
+    },
+    onError: (e) => {
+      console.log("error", e?.data);
+
+      if (e) {
+        toast.error(e.message);
+      } else {
+        toast.error("Failed to post! Please try again later.");
+      }
     },
   });
 
   if (!user?.user) return null;
 
-  console.log(user);
-
   return (
     <div className="flex w-full gap-3">
-      {/* <SignOutButton /> */}
       <Image
         className="h-14 w-14 rounded-full"
         src={user.user?.imageUrl}
@@ -48,8 +56,24 @@ const CreatePostWitzard = () => {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         disabled={isPosting}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+
+            if (input !== "") {
+              mutate({ content: input });
+            }
+          }
+        }}
       />
-      <button onClick={() => mutate({ content: input })}>Post</button>
+      {input !== "" && !isPosting && (
+        <button onClick={() => mutate({ content: input })}>Post</button>
+      )}
+      {isPosting && (
+        <div className="flex items-center justify-center">
+          <LoadingSpinner size={20} />
+        </div>
+      )}
     </div>
   );
 };
