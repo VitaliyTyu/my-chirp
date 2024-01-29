@@ -7,11 +7,25 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import type { RouterOutputs } from "~/utils/api";
 import Image from "next/image";
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
 const CreatePostWitzard = () => {
+  const [input, setInput] = useState("");
+
   const user = useUser();
+
+  // get whole trpc context
+  const ctx = api.useUtils();
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      // void для того чтобы, показать ts, что на мне важно выполнение промиса сейчас, он выполнится где-то там
+      void ctx.posts.getAll.invalidate();
+    },
+  });
 
   if (!user?.user) return null;
 
@@ -30,7 +44,12 @@ const CreatePostWitzard = () => {
       <input
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
       />
+      <button onClick={() => mutate({ content: input })}>Post</button>
     </div>
   );
 };
@@ -51,7 +70,7 @@ const PostView = ({ post, author }: PostWithUser) => {
           <span className="font-semibold">{`@${author.username}`}</span>
           <span className="font-thin">{` · ${dayjs(post.createdAt).fromNow()}`}</span>
         </div>
-        <span>{post.content}</span>
+        <span className="text-2xl">{post.content}</span>
       </div>
     </div>
   );
